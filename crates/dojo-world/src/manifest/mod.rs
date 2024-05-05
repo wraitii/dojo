@@ -257,6 +257,7 @@ impl DeploymentManifest {
                 WorldContract {
                     address: Some(world_address),
                     class_hash: world_class_hash,
+                    original_class_hash: world_class_hash,
                     ..Default::default()
                 },
                 WORLD_CONTRACT_NAME.into(),
@@ -471,13 +472,15 @@ fn parse_models_events(events: Vec<EmittedEvent>) -> Vec<Manifest<DojoModel>> {
     }
 
     // TODO: include address of the model in the manifest.
-    models
+    let ret = models
         .into_iter()
         .map(|(name, class_hash)| Manifest::<DojoModel> {
             inner: DojoModel { class_hash, abi: None, ..Default::default() },
             name: name.into(),
         })
-        .collect()
+        .collect();
+    println!("{:?}", ret);
+    ret
 }
 
 // fn elements_to_path<T>(item_dir: &Utf8PathBuf, items: &Vec<Manifest<T>>) -> Result<()>

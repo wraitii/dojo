@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use convert_case::{Case, Casing};
 use starknet_crypto::FieldElement;
@@ -44,11 +44,18 @@ impl WorldDiff {
                         .unwrap_or(&model.name)
                         .from_case(Case::Snake)
                         .to_case(Case::Pascal);
-
-                    m.models.iter().find(|e| e.name == model_name).map(|s| *s.inner.class_hash())
+                    println!("Comparing name {} with {}", model_name, model.name);
+                    m.models.iter().find(|e| e.name.to_lowercase() == model_name.to_lowercase()).map(|s| *s.inner.class_hash())
                 }),
             })
             .collect::<Vec<_>>();
+
+        let base = ClassDiff {
+            name: BASE_CONTRACT_NAME.into(),
+            local_class_hash: *local.base.inner.class_hash(),
+            original_class_hash: remote.as_ref().map(|m| *m.base.inner.class_hash()).unwrap(),
+            remote_class_hash: remote.as_ref().map(|m| *m.base.inner.class_hash()),
+        };
 
         let contracts = local
             .contracts
@@ -59,7 +66,7 @@ impl WorldDiff {
                     if class_hash != FieldElement::ZERO {
                         class_hash
                     } else {
-                        *local.base.inner.class_hash()
+                        base.original_class_hash
                     }
                 };
 
@@ -78,19 +85,13 @@ impl WorldDiff {
             })
             .collect::<Vec<_>>();
 
-        let base = ClassDiff {
-            name: BASE_CONTRACT_NAME.into(),
-            local_class_hash: *local.base.inner.class_hash(),
-            original_class_hash: *local.base.inner.original_class_hash(),
-            remote_class_hash: remote.as_ref().map(|m| *m.base.inner.class_hash()),
-        };
 
         let world = ContractDiff {
             name: WORLD_CONTRACT_NAME.into(),
             local_class_hash: *local.world.inner.class_hash(),
-            original_class_hash: *local.world.inner.original_class_hash(),
-            base_class_hash: *local.base.inner.class_hash(),
-            remote_class_hash: remote.map(|m| *m.world.inner.class_hash()),
+            original_class_hash: FieldElement::from_str("0x00099b08b2ff33750916e36b5e241b5d4a63e8d48862bf90a68fec2ff58a8de6").unwrap(),
+            base_class_hash: base.original_class_hash,
+            remote_class_hash: remote.as_ref().map(|m| *m.world.inner.class_hash()),
         };
 
         WorldDiff { world, base, contracts, models }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8PathBuf;
@@ -85,6 +86,8 @@ pub fn prepare_for_migration(
         artifact_paths.insert(name, entry.path());
     }
 
+    println!("diffs: {:?}", diff);
+
     // We don't need to care if a contract has already been declared or not, because
     // the migration strategy will take care of that.
 
@@ -101,10 +104,13 @@ pub fn prepare_for_migration(
         let salt = poseidon_hash_single(seed);
 
         world.salt = salt;
+        println!("seed: {:?}, salt: {:?}", seed, salt);
         let generated_world_address = get_contract_address(
             salt,
             diff.world.original_class_hash,
-            &[base.as_ref().unwrap().diff.original_class_hash],
+            &[
+                FieldElement::from_str("0x59f31686991d7cac25a7d4844225b9647c89e3e1e2d03460dbc61e3fbfafc59").unwrap(),
+                base.as_ref().unwrap().diff.original_class_hash],
             FieldElement::ZERO,
         );
 
@@ -170,11 +176,13 @@ fn evaluate_contracts_to_migrate(
                 continue;
             }
             _ => {
+                // Pick only the bit after the last ::
+                let end_name_bit = c.name.rsplit("::").next().unwrap();
                 let path = find_artifact_path(c.name.as_str(), artifact_paths)?;
                 comps_to_migrate.push(ContractMigration {
                     diff: c.clone(),
                     artifact_path: path.clone(),
-                    salt: generate_salt(&c.name),
+                    salt: generate_salt(&end_name_bit),
                     ..Default::default()
                 });
             }

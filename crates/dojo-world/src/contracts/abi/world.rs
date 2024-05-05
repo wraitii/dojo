@@ -653,16 +653,6 @@ abigen!(
         "name": "prev_class_hash",
         "type": "core::starknet::class_hash::ClassHash",
         "kind": "data"
-      },
-      {
-        "name": "address",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "data"
-      },
-      {
-        "name": "prev_address",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "data"
       }
     ]
   },
